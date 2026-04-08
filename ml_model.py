@@ -11,15 +11,21 @@ Protein multipliers aligned with current evidence (ISSN 2017, Stokes et al. 2018
   - Maintain: 1.4–1.8 g/kg  (general health range)
 """
 
+import os
 import threading
 import numpy as np
 import pandas as pd
+import joblib
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error
 import warnings
 warnings.filterwarnings('ignore')
+
+# Trained models are saved here so Render only trains once per deploy,
+# not on every cold start / restart.
+MODEL_CACHE_PATH = 'model_cache.joblib'
 
 
 # ─────────────────────────────────────────────
@@ -279,6 +285,19 @@ def train():
         if _trained:
             return
 
+        # ── Try loading from cache first ──────────────────────────────────────
+        # On first deploy this won't exist, so we train and save.
+        # On every subsequent cold start / restart it loads in ~1 second.
+        if os.path.exists(MODEL_CACHE_PATH):
+            print("📦 Loading models from cache...")
+            cache = joblib.load(MODEL_CACHE_PATH)
+            _models = cache['models']
+            _scaler = cache['scaler']
+            _trained = True
+            print("✅ Models loaded from cache.\n")
+            return
+
+        # ── No cache — train from scratch ─────────────────────────────────────
         print("🔬 Generating training data...")
         df = generate_training_data(5000)
 
@@ -314,7 +333,11 @@ def train():
 
         _models = new_models
         _trained = True
-        print("✅ All models trained.\n")
+
+        # ── Save to cache ──────────────────────────────────────────────────────
+        print("💾 Saving models to cache...")
+        joblib.dump({'models': _models, 'scaler': _scaler}, MODEL_CACHE_PATH)
+        print("✅ All models trained and cached.\n")
 
 
 # ─────────────────────────────────────────────
