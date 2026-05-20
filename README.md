@@ -1,3 +1,13 @@
+---
+title: NutriCore
+emoji: 🥗
+colorFrom: green
+colorTo: blue
+sdk: docker
+pinned: false
+app_port: 8080
+---
+
 # NutriCore AI — Python ML Nutrition Engine
 
 ## Setup & Run
@@ -7,7 +17,7 @@ pip install -r requirements.txt
 python app.py
 ```
 
-Then open: http://localhost:5050
+Then open: http://localhost:8080
 
 ## How It Works
 
